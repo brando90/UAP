@@ -9,14 +9,14 @@ class TestSmoothCurveGenerator(unittest.TestCase):
 		self.simpleDataPoints = [2,4]
 
 	def test_simple_estimateSampleMean(self):
-		scgen = scg.SmoothCurveGenerator([2,6])
-		x_mean = scgen.estimateSampleMean(scgen.getDataList())
+		scgen = scg.SmoothCurveGenerator([2,6], [])
+		x_mean = scgen.estimateSampleMean(scgen.getData1())
 		actual_mean =  4
 		self.assertEqual(x_mean, actual_mean)
 
 	def test_simple_estimateSampleMean(self):
-		scgen = scg.SmoothCurveGenerator([2,6])
-		x_var = scgen.estimateSampleVariance(scgen.getDataList())
+		scgen = scg.SmoothCurveGenerator([2,6], [])
+		x_var = scgen.estimateSampleVariance(scgen.getData1())
 		actual_var =  4
 		self.assertEqual(x_var, actual_var)
 		
