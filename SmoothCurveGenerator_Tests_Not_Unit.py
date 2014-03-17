@@ -27,7 +27,7 @@ class PlotDiagramTests:
 
 		gen = scg.SmoothCurveGenerator(sampD1, sampD2)
 		kde_pdf = gen.generateKernelDensityEstimateSmoothFunction()
-		gen.plotSmoothFunction_1D(kd_pdf)
+		gen.plotSmoothFunction_1D(kde_pdf)
 
 	@classmethod
 	def Normal_Simple_Test_Plot(self):
@@ -43,5 +43,6 @@ class PlotDiagramTests:
 		sampD2 = list(scipy.stats.norm.rvs(loc=mean2,scale=std2,size=size_sample_data))
 
 		gen = scg.SmoothCurveGenerator(sampD1, sampD2)
+		
 
 PlotDiagramTests.KSE_Simple_Normal_Test_Plot()
