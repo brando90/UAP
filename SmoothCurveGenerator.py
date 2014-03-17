@@ -1,18 +1,26 @@
 import numpy as np
 import random as rand
 import scipy as scipy
-import pylab
+from pylab import plot,show,hist
 
 class SmoothCurveGenerator:
 	def __init__(self, data1, data2):
 		self.data1 = data1
 		self.data2 = data2
+		self.samp = self.hstackData()
 
 	def getData1(self):
 		return self.data1
 
 	def getData2(self):
 		return self.data2
+
+	def getSamp(self):
+		return self.samp
+
+	def hstackData(self):
+		#stacks things column wise
+		self.samp = np.hstack([self.getData1(), self.getData2()])
 
 	#Estimate the mean for one array of data points
 	#data = np.array([x1, ..., xn])
@@ -29,17 +37,15 @@ class SmoothCurveGenerator:
 		return variance
 
 	def generateKernelDenistyEstimateSmoothFunction(self):
-		#stacks things column wise
-		samp = np.hstack([sampD1,sampD2])
 		# obtaining the pdf function (pointer)
-		my_pdf = scipy.stats.gaussian_kde(samp)
+		my_pdf = scipy.stats.gaussian_kde(self.samp)
 		return my_pdf
 
 	def plotSmoothFunction_1D(self, pdf, lowerBound = -5, upperBound = 5, spacing = 100):
 		#returns evenly spaced numbers over a specified interval
 		x = np.linspace(lowerBound, upperBound, upperBound) 
 		plot(x, pdf(x), 'r') # distribution function
-		hist(samp, normed=1, alpha=.3) # histogram
+		hist(self.getSamp(), normed=1, alpha=.3) # histogram
 		show()
 
 
