@@ -1,13 +1,22 @@
 import numpy as np
 import random as rand
 import scipy as scipy
+from scipy import stats
 from pylab import plot,show,hist
 
+#CONSTANTS
+INFINITY = float("inf")
+MINUS_INFINITY = float("-inf")
+
 class SmoothCurveGenerator:
+#class SmoothCurveGenerator(stats.rv_continuous):
 	def __init__(self, data1, data2):
 		self.data1 = np.array(data1)
 		self.data2 = np.array(data2)
 		self.samp = self.hstackData()
+		# self.a = float("-inf")
+		# self.b = float("inf")
+		# self.numargs = 0
 
 	def getData1(self):
 		return self.data1
@@ -41,6 +50,12 @@ class SmoothCurveGenerator:
 		my_pdf = scipy.stats.gaussian_kde(self.samp)
 		return my_pdf
 
+	# def setPdf(self, input_pdf):
+	# 	self.pdf = input_pdf
+
+	# def _pdf(self, x):
+	# 	return self.pdf(x)
+
 	#TODO problem: having pdf as an input to functions is a problem because
 	#some functions in scipy need the parameters explicity. 
 	#like loc and scale. However, if that is all they need then it could be
@@ -58,12 +73,36 @@ class SmoothCurveGenerator:
 	#Returns D(p||q) = E[log(p(x)/q(x))] = E[log(1/q(x))] - E[log(1/p(x))]
 	def getKlDivergence(self, p_pdf, q_pdf):
 		#TODO
-		return None
+		def information_p_pdf(x):
+			return math.log(1.0/p_pdf(x), 2)
+		def information_q_pdf(x):
+			return math.log(1.0/q_pdf(x), 2)
+		e_q_x = self.expect(p_pdf, information_q_pdf, MINUS_INFINITY, INFINITY)
+		e_p_x = self.expect(p_pdf, information_p_pdf, MINUS_INFINITY, INFINITY)
+		divergence = e_q_x - e_p_x
+		return divergence
+
+	#computes expected value
+	#return sum^{ub}_{x = lb}{pdf(x) * fn(x)}
+	def expect(self, pdf, fn=None, lb=None, ub=None):
+		#this term is f(x) * x that will be integrated to get expectation
+		if fn == None:
+			fn = lambda x: x
+		if lb == None:
+			lb = MINUS_INFINITY
+		if ub == None:
+			ub = INFINITY
+		def summationTermInExpectation(x):
+			return pdf(x) * fn(x)
+		return scipy.integrate.quad(summationTermInExpectation, lb, ub)
+
+#expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None,
 
 	#Returns EMD(p,q)
-	def getEMD(self, p_pdf, q_pdf):
-		#TODO
-		return None
+	def getEMD(self, p_pdf, q_pdf, lb, up):
+		def summationTermInExpectation(x):
+			return pdf(x) * math.abs(p_pdf(x) - q_pdf(x))
+		return scipy.integrate.quad(summationTermInExpectation, lb, ub)
 
 
 
