@@ -109,5 +109,10 @@ class SmoothCurveGenerator:
 			return 0.5 * math.pow(math.sqrt(p_pdf(x)) - math.sqrt(q_pdf(x)),2)
 		return scipy.integrate.quad(summationTermInExpectation, lb, ub) 
 
+	def EngineersMetric(self, p_pdf, q_pdf, lb, up):
+		e_p = scipy.integrate.quad(p_pdf)
+		e_q = scipy.integrate.quad(q_pdf)
+		return math.abs(e_p - e_q)
+
 
 #scg = SmoothCurveGenerator([1,2,3])
