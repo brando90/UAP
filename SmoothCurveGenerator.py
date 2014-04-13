@@ -71,18 +71,6 @@ class SmoothCurveGenerator:
 		hist(self.getSamp(), normed=1, alpha=.3) # histogram
 		show()
 
-	#Returns D(p||q) = E[log(p(x)/q(x))] = E[log(1/q(x))] - E[log(1/p(x))]
-	def getKlDivergence(self, p_pdf, q_pdf):
-		#TODO
-		def information_p_pdf(x):
-			return math.log(1.0/p_pdf(x), 2)
-		def information_q_pdf(x):
-			return math.log(1.0/q_pdf(x), 2)
-		e_q_x = self.expect(p_pdf, information_q_pdf, MINUS_INFINITY, INFINITY)
-		e_p_x = self.expect(p_pdf, information_p_pdf, MINUS_INFINITY, INFINITY)
-		divergence = e_q_x - e_p_x
-		return divergence
-
 	#computes expected value
 	#return sum^{ub}_{x = lb}{pdf(x) * fn(x)}
 	def expect(self, pdf, fn=None, lb=None, ub=None):
@@ -112,6 +100,18 @@ class SmoothCurveGenerator:
 		def summationTermInExpectation(x):
 			return math.fabs(p_pdf(x) - q_pdf(x))
 		return scipy.integrate.quad(summationTermInExpectation, lb, ub)
+
+	#Returns D(p||q) = E[log(p(x)/q(x))] = E[log(1/q(x))] - E[log(1/p(x))]
+	def getKlDivergence(self, p_pdf, q_pdf, lb=None, ub=None):
+		(lb, ub) = self.assignEmptyBounds(lb, ub)
+		def information_p_pdf(x):
+			return math.log(1.0/p_pdf(x), 2)
+		def information_q_pdf(x):
+			return math.log(1.0/q_pdf(x), 2)
+		e_q_x = self.expect(p_pdf, information_q_pdf, lb, ub)
+		e_p_x = self.expect(p_pdf, information_p_pdf, lb, ub)
+		divergence = e_q_x - e_p_x
+		return divergence
 
 	def SquaredHellingerDistance(self, p_pdf, q_pdf, lb=None, ub=None):
 		(lb, ub) = self.assignEmptyBounds(lb, ub)

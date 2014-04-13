@@ -36,6 +36,7 @@ class TestSmoothCurveGenerator(unittest.TestCase):
 		kde_pdf = gen.generateKernelDensityEstimateSmoothFunction()
 		print "expect: ", gen.expect(kde_pdf)
 		print "getTotalVariation: ", gen.getTotalVariation(kde_pdf, kde_pdf)
+		print "kl divergence: ", gen.SquaredHellingerDistance(kde_pdf, kde_pdf)
 		print "SquaredHellingerDistance: ", gen.SquaredHellingerDistance(kde_pdf, kde_pdf)
 		print "EngineersMetric: ", gen.EngineersMetric(kde_pdf, kde_pdf)
 		print "LpMetric: ", gen.LpMetric(kde_pdf, kde_pdf, 1.0)
