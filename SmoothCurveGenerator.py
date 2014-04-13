@@ -101,7 +101,7 @@ class SmoothCurveGenerator:
 	#Total Variation
 	def getTotalVariation(self, p_pdf, q_pdf, lb, up):
 		def summationTermInExpectation(x):
-			return pdf(x) * math.abs(p_pdf(x) - q_pdf(x))
+			return math.abs(p_pdf(x) - q_pdf(x))
 		return scipy.integrate.quad(summationTermInExpectation, lb, ub)
 
 	def SquaredHellingerDistance(self, p_pdf, q_pdf, lb, up):
@@ -113,6 +113,14 @@ class SmoothCurveGenerator:
 		e_p = scipy.integrate.quad(p_pdf)
 		e_q = scipy.integrate.quad(q_pdf)
 		return math.abs(e_p - e_q)
+
+	def LpMetric(self, p_pdf, q_pdf, exponent, lb, ip):
+		n = exponent
+		def summationTermInExpectation(x):
+			return math.exp(math.abs(p_pdf(x) - q_pdf(x)), n)
+		nth_distance = scipy.integrate.quad(summationTermInExpectation, lb, ub)
+		return math.exp(nth_distance, 1.0/float(n))
+
 
 
 #scg = SmoothCurveGenerator([1,2,3])
