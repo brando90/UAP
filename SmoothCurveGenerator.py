@@ -3,6 +3,7 @@ import random as rand
 import scipy as scipy
 from scipy import stats
 from pylab import plot,show,hist
+import math as math
 
 #CONSTANTS
 INFINITY = float("inf")
@@ -98,28 +99,39 @@ class SmoothCurveGenerator:
 
 #expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None,
 
+	def assignEmptyBounds(self, lb, ub):
+		if lb == None:
+			lb = MINUS_INFINITY
+		if ub == None:
+			ub = INFINITY
+		return (lb, ub)
+
 	#Total Variation
-	def getTotalVariation(self, p_pdf, q_pdf, lb, up):
+	def getTotalVariation(self, p_pdf, q_pdf, lb=None, ub=None):
+		(lb, ub) = self.assignEmptyBounds(lb, ub)
 		def summationTermInExpectation(x):
-			return math.abs(p_pdf(x) - q_pdf(x))
+			return math.fabs(p_pdf(x) - q_pdf(x))
 		return scipy.integrate.quad(summationTermInExpectation, lb, ub)
 
-	def SquaredHellingerDistance(self, p_pdf, q_pdf, lb, up):
+	def SquaredHellingerDistance(self, p_pdf, q_pdf, lb=None, ub=None):
+		(lb, ub) = self.assignEmptyBounds(lb, ub)
 		def summationTermInExpectation(x):
 			return 0.5 * math.pow(math.sqrt(p_pdf(x)) - math.sqrt(q_pdf(x)),2)
 		return scipy.integrate.quad(summationTermInExpectation, lb, ub) 
 
-	def EngineersMetric(self, p_pdf, q_pdf, lb, up):
-		e_p = scipy.integrate.quad(p_pdf)
-		e_q = scipy.integrate.quad(q_pdf)
-		return math.abs(e_p - e_q)
+	def EngineersMetric(self, p_pdf, q_pdf, lb=None, ub=None):
+		(lb, ub) = self.assignEmptyBounds(lb, ub)
+		e_p, error_p = scipy.integrate.quad(p_pdf, lb, ub)
+		e_q, error_q= scipy.integrate.quad(q_pdf, lb, ub)
+		return math.fabs(e_p - e_q)
 
-	def LpMetric(self, p_pdf, q_pdf, exponent, lb, ip):
-		n = exponent
+	def LpMetric(self, p_pdf, q_pdf, p_exponent, lb=None, ub=None):
+		(lb, ub) = self.assignEmptyBounds(lb, ub)
+		p = float(p_exponent)
 		def summationTermInExpectation(x):
-			return math.exp(math.abs(p_pdf(x) - q_pdf(x)), n)
-		nth_distance = scipy.integrate.quad(summationTermInExpectation, lb, ub)
-		return math.exp(nth_distance, 1.0/float(n))
+			return math.pow(math.fabs(p_pdf(x) - q_pdf(x)), float(p))
+		pth_distance, error = scipy.integrate.quad(summationTermInExpectation, lb, ub)
+		return math.pow(pth_distance, 1.0/float(p))
 
 
 
