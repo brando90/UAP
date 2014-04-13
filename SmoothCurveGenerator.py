@@ -98,12 +98,16 @@ class SmoothCurveGenerator:
 
 #expect(func=None, args=(), loc=0, scale=1, lb=None, ub=None,
 
-	#Returns EMD(p,q)
-	def getEMD(self, p_pdf, q_pdf, lb, up):
+	#Total Variation
+	def getTotalVariation(self, p_pdf, q_pdf, lb, up):
 		def summationTermInExpectation(x):
 			return pdf(x) * math.abs(p_pdf(x) - q_pdf(x))
 		return scipy.integrate.quad(summationTermInExpectation, lb, ub)
 
+	def SquaredHellingerDistance(self, p_pdf, q_pdf, lb, up):
+		def summationTermInExpectation(x):
+			return 0.5 * math.pow(math.sqrt(p_pdf(x)) - math.sqrt(q_pdf(x)),2)
+		return scipy.integrate.quad(summationTermInExpectation, lb, ub) 
 
 
 #scg = SmoothCurveGenerator([1,2,3])
