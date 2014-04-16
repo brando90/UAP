@@ -40,7 +40,24 @@ class TestSmoothCurveGenerator(unittest.TestCase):
 		print "SquaredHellingerDistance: ", gen.SquaredHellingerDistance(kde_pdf, kde_pdf)
 		print "EngineersMetric: ", gen.EngineersMetric(kde_pdf, kde_pdf)
 		print "LpMetric: ", gen.LpMetric(kde_pdf, kde_pdf, 1.0)
-		
+
+	def test_simple_kl_divergence_test(self):
+		mean1 = -1.0
+		std1 = 1
+		size_sample_data = 300
+		sampD1 = list(scipy.stats.norm.rvs(loc=mean1,scale=std1,size=size_sample_data))
+		gen = scg.SmoothCurveGenerator(sampD1, [])
+		pdf_normal_fitted_by_kde_mean1 = gen.generateKernelDensityEstimateSmoothFunction()
+
+		mean1 = 1.0
+		std1 = 2
+		size_sample_data = 300
+		sampD1 = list(scipy.stats.norm.rvs(loc=mean1,scale=std1,size=size_sample_data))
+		gen = scg.SmoothCurveGenerator(sampD1, [])
+		pdf_normal_fitted_by_kde_mean2 = gen.generateKernelDensityEstimateSmoothFunction()
+		print "Here"
+		print "KL DIVERGENCE: ", gen.SquaredHellingerDistance(pdf_normal_fitted_by_kde_mean1, pdf_normal_fitted_by_kde_mean2)
+		print "Here"
 
 if __name__ == '__main__':
 	unittest.main()
