@@ -105,11 +105,17 @@ class SmoothCurveGenerator:
 	def getKlDivergence(self, p_pdf, q_pdf, lb=None, ub=None):
 		(lb, ub) = self.assignEmptyBounds(lb, ub)
 		def information_p_pdf(x):
-			return math.log(1.0/p_pdf(x), 2)
+			if p_pdf(x) == 0:
+				return 0.0
+			#return math.log(1.0/p_pdf(x), 2)
+			return -1 * math.log(p_pdf(x), 2)
 		def information_q_pdf(x):
-			return math.log(1.0/q_pdf(x), 2)
-		e_q_x = self.expect(p_pdf, information_q_pdf, lb, ub)
-		e_p_x = self.expect(p_pdf, information_p_pdf, lb, ub)
+			if q_pdf(x) == 0:
+				return 0.0
+			#return math.log(1.0/q_pdf(x), 2)
+			return -1 * math.log(q_pdf(x), 2)
+		e_q_x, error_q = self.expect(p_pdf, information_q_pdf, lb, ub)
+		e_p_x, error_p = self.expect(p_pdf, information_p_pdf, lb, ub)
 		divergence = e_q_x - e_p_x
 		return divergence
 
