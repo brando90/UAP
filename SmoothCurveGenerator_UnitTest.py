@@ -59,5 +59,7 @@ class TestSmoothCurveGenerator(unittest.TestCase):
 		print "KL DIVERGENCE: ", gen.SquaredHellingerDistance(pdf_normal_fitted_by_kde_mean1, pdf_normal_fitted_by_kde_mean2)
 		print "Here"
 
+	#integrate ((1/(5*sqrt(2*pi*1))*e^((-1/2)(1/25)(x-5)^2) * log_2((3/5)*e^((8/225)(x-5)^2))) from -infinity to infinity
+
 if __name__ == '__main__':
 	unittest.main()
