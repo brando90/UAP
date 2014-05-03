@@ -41,6 +41,7 @@ class TestSmoothCurveGenerator(unittest.TestCase):
 	# 	print "EngineersMetric: ", gen.EngineersMetric(kde_pdf, kde_pdf)
 	# 	print "LpMetric: ", gen.LpMetric(kde_pdf, kde_pdf, 1.0)
 
+	#answer given by mathematica was 0.14683513390038300070
 	def test_simple_kl_divergence_test(self):
 		mean1 = 3.0
 		std1 = 5
