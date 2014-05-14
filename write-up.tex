@@ -1,0 +1,204 @@
+\documentclass[a4paper]{article}
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+
+\title{RoadRunner}
+
+\author{Pedro Cattori and Brando Miranda}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+RoadRunner is a persistent, fault-tolerant, high-performance key-value store. 
+RoadRunner avoids two round trip times by preparing everything in the Paxos log in advance from some sequence number to infinity. 
+Our implementation of Multi-Paxos is independent of clock synchronization or time leases.
+Our design of Multi-Paxos does not need to elect leaders explicitly by using Paxos instance to decide on an server id number.
+Instead, from the servers that are alive, the one with the highest server id will consider himself the leader and prepare Paxos instances in advance (and eventually send accepts too).
+The correctness of our Multi-Paxos design will not be affected if multiple servers think they are the leader. 
+In fact, if the leader is unstable and the leader switches around constantly during the operation of RoadRunner, it will degrade gracefully into normal Paxos. 
+Thus, in the worst-case where RoadRunner's servers die constantly, it will offer performance at least as good as normal Paxos.
+
+\indent For persistence, Multi-Paxos will only reply to the proposers once it has persistence the acceptors on disk. This is to not change already decided values. 
+RoadRunner also writes the key-value store to disk and persists the local min
+\footnote{Recall local min is one more than the lowest sequence number that a server has called Done() on (where done is the function that garbage collect paxos instances that already reached a decision and also have been applied to our key-value store.}
+, so that it knows what operations from the Multi-Paxos log to not re-apply. 
+Furthermore, if one server has its disk contents crash, we have a mechanism to ensure correctness of the whole service when we add back a functional server to the system.
+\end{abstract}
+
+\section{Protocol Design}
+
+Conceptually, the reason for this is because the effective leader will send the highest epoch round along with any prepares or accepts he does, so two things will happen; first, old leader will have a lower epoch round so servers will reject old accepts, second, new leader will always prepare before sending accepts, so they will learn of old decided value if there are any. 
+
+
+\subsection{Overview}
+
+\subsubsection{Overview of Multi-Paxos}
+
+In the case of a stable leader Multi-Paxos will have a performance benefit by avoiding round trip times when starting Paxos instances in the log.
+Multi-Paxos will prepare all sequences in the Paxos log from a given sequence number to infinity with the current round number.
+However, what used to be a round number in normal Paxos will have different semantic in our Multi-Paxos.
+In our design, a round number will still be used to reject old accepts and prepare's, however, they will also correspond to the epoch round of the current leader. 
+Therefore, round numbers will be referred to as epoch numbers and the current acting leader will have the highest epoch round number (corresponding to the round in which he is the leader).
+Therefore, the leader will send prepare and accept messages with his epoch number and, if any other old leader tries to send accept or prepare messages with a lower epoch number, servers that have already been prepared with the current leader will reject and inform him that he should find out who the real leader is.
+Therefore, we ensure that old leader cannot change any already decide values because if a majority of the new servers have been prepared by the new leader, they will reject any old accept or prepare message and inform the confused leader about the new leader (because the majority was prepared with a higher epoch number).
+Furthermore, new leader cannot possibly change old decided values either. 
+This is because when a new leader is formed, he will *always* send prepare messages before sending accept messages.
+Therefore, whenever he tries propose any new values, he will always be learn a decided value by some majority, if one exists.
+\\
+\indent However, how do we make sure that the system agrees on who the leader is? 
+This is enforced through our periodic ticks.
+All the servers will ping each other and if one of the servers does not respond for a long enough time, a server will consider it dead.
+If the dead server was the leader, then the servers will learn that a new leader has to be formed.
+From the pings responses, he knows which  servers are aline and which are not.
+Whoever has the highest server id should act as the leader and that is how servers know who the new leader is.
+If a client needs to know who the leader is, he can be informed by any server of who they believe the leader is and the client can eventually route requests to the true leader.
+Notice that it is possible that in a really bad network situation or if there is no stable leader, that the servers will duel to be the leader.
+In that case, then that case servers will prepare and increasing their epoch number and inevitably duel for Paxos instances.
+A similar scenario was possible normal in Paxos, so in a temporary bad scenario, the system will  behave like normal Paxos.
+\\
+\indent Our Multi-Paxos library can also handle disk crashes.
+The way that it ensures correct Paxos behaviour is by persisting the acceptors before replying to a proposer from the leader.
+The reason that this is important is because, when a acceptors replies to a proposer, it promises that it will not accept values with a epoch number lower than n.
+If that is true, but then acceptor forgets that it did that promise, it is possible that a decided value that was "locked", reverses, which is bad behaviour in Paxos.
+Thus, for the correct behaviour of the Paxos, we persist acceptors.
+
+\subsubsection{Overview of the whole Service and Persistance}
+
+RoadRunner is a sharded key-value store (that garbage collects), which means that our system is able to handle very large amounts of data.
+Our system is made fault-tolerent through Multi-Paxos and disk writes.
+The main things that we write to disk are: key-value store, the duplicate detection table (history of keys and shards), the Multi-Paxos acceptors and the local min (one more than the last sequence number that was garbage collected, i.e. Done was called on it).
+If one server crashes with its disk intact, then it can return to its normal operation by reading the disk.
+The key-value store he stored will make sure that he doesn't have to re-apply every operation ever done to its key-vale store to get it up to date.
+The fact that he knows the local min means that he knows from which operations he needs to learn decided value and which ones his key-value store might be behind. 
+Remembering the history of the shards makes sure that duplicate detection works normal when he comes back up.
+Remembering the acceptors  ensures the correct behaviour of multi-Paxos.\\
+\indent If the disk crashes too, one has to be more careful on how the system proceeds.
+The reason is because we have lost all the acceptors for any sequence in the Paxos log.
+Therefore, before the system resumes operation with a recovered server, it needs to make sure that it does not reverse any values that had previously been decided (or worse, not reverse any values that were already applied to the key-value store).
+Conceptually, it would be nice if we could copy the state of some server such that we could get back the acceptors we had when we formed any decision before having our disk crash.
+This is equivalent to knowing the sequence number of the highest decision we have contributed to. 
+In turn, the highest decision we have contributed to is less than or equal to the sequence number of the highest decision ever made by the system as a whole.
+Thus, to recover correctly, its enough that our service queries some majority for their 
+local max\footnote{local max is the highest sequence number for which this server knows a Paxos instance has been started} 
+and then stores the largest local max from the majority.
+Since the local max is the highest sequence number for which a Paxos instance has started, if a value has been decided, then it has obviously been started.
+Therefore, the largest started sequence number from a majority clearly upper bounds the highest value that has been decided.
+Therefore, now that the server that is trying to recover knows the largest sequence number started by some majority, if it waits for any server's local min to be larger than that value, then it is guaranteed that it will recover to a safe state.
+So that is what RoadRunner will do.
+It will wait until some local min is larger than that value and then basically replicate identically that server.
+
+\section{Code Overview}
+
+Our code for Multi-Paxos heavily commented. In fact there is a Table of Contents at the top of our multi-Paxos code to help you find the methods and functions that are of interest.
+The explanation of what each section is about is in the comments in the code.
+Also, note that we have a pseudocode file with some of the important functions explained in english.
+
+\subsection{Preparing Paxos instances in Multi-Paxos}
+
+During normal Paxos, there are two phases, the prepare phase and the accept phase. 
+Multi-Paxos needs an analogous set of two phases for correctness (so that Multi-Paxos always learns old value before sending accepts blindly). 
+In this section we will explain the prepare phase.
+
+\subsubsection{The Prepare Phase and the Prepare Handler}
+
+The prepare phase conceptually prepares all sequences from a staring sequence to infinity until a majority is formed:
+
+Pseudocode:
+
+\textbf{func} (MultiPaxos) prepareEpochPhase(seq) \{ \\
+\indent \indent \textbf{until} a majority is formed on each sequence $\geq$ seq \{ \\
+\indent \indent \indent \textbf{send} prepare rpc to each server with seq and epoch e \\
+\indent \indent  \} \\
+\indent \indent \textbf{if} we get any reject \{ \\
+\indent \indent \indent \textbf{then,} increase epoch number correctly and uniquely \\
+\indent \indent \} \\
+\indent \}
+
+In the practice its silly to actually create an infinite set of acceptors and send some kind of prepare reply for all the sequences numbers for every server.
+Instead the prepare handler from a some specific sequence number to the local max (max known sequence that has been started) and then reply to the leader's proposer.
+However, since the current acceptors just replied with a promise to not accepts with lower epoch rounds, if they ever get a sequence for which the acceptor has yet not been initialized, the server will make sure to create acceptors that keep that promise (by remembering that promise epoch round!).
+Basically, the idea is, in practice we don't create all the acceptors to infinity, but when a new acceptor is needed, its created with correct epoch round according to the highest prepare phase they have received.
+
+\subsection{Sending proposes in Multi-Paxos}
+
+We changed the Start function in normal paxos to be the Push function.
+The push function tries to Push some value to the paxos log and it might be successful or it might not, but more importantly, push will call leaderPropose. 
+Leader propose will be described in the next section.
+
+\subsubsection{Leader Propose}
+
+Leader propose is the function that sends the accepts to all the acceptors with the current epoch round number.
+The Leader tries to propose a value and if it receives a majority of accepts, then a decision happened!
+If not but it received a reject, it will try to do another prepare phase and refresh its epoch number (and increase it correctly).
+If no majority formed but not rejection was received, then the leader will keep trying to propose value.
+
+\subsection{Electing leaders through tick and pings}
+
+Our Multi-Paxos will periodically tick and thus ping all servers.
+Once we have received the replies from the pings (and thus all the servers), Multi-Paxos  runs the leader election procedure.
+The leader election procedure is simple, from the servers that are consider alive, pick the one with the highest server ID and consider that the leader (if its our own ID then start acting as a leader). 
+As I already explained on the overview, its ok if multiple servers ever think they are both leaders because the true leader will eventually have the highest epoch round (which means his accepts are the only ones that are accepted), old leaders with lower epoch rounds will get rejected (any leader always prepares before it sends accepts, so its impossible to reverse decisions unsafely) and in the case of a unstable leader, our system will just behave like normal Paxos. 
+For more implementation details see the comments, pseudocode or actual code of the tick() function
+
+\subsection{Persistence and Recovery}
+
+In this section I will discuss the three most important cases for recovery and how we are persisting things on disk.
+
+\subsubsection{Recover when one server crashes but disk is intact}
+The most important things that we will be storing on disk are the acceptors for multi-Paxos, the local min, the key-value store and the duplicate detection table (the history of the shards and keys).
+The reason why we needed to store these have already been discussed in the Overview of the protocol.
+When a server crashes and loses its memory, it will simply fetch a copy of its disk and restore his key-value store and make sure its multi-Paxos is in a state that doesn't corrupt.
+The tick() function at the key-value store level will try to catch up and make sure its in sync with the rest of the system.
+
+\subsubsection{Recover when one server crashes but the disk crashes}
+This is a more interesting case to consider and the correctness of this step was covered in detail in the overview of the protocol.
+Here is the recovery procedure for if one disk crashes:
+            
+\textbf{func} (MultiPaxos) Reboot() \{ \\
+\indent \indent \textbf{if} disk is dead \{ \\
+\indent \indent \indent \textbf{query} a majority for their  localMax  \textbf{and} choose $max_{i}(localMax_i)$ \\
+\indent \indent \indent \textbf{ping} for localMin until one localMin $> $ $max_{i}(localMax_i)$; \\
+\indent \indent \indent \textbf{if} cant find localMin $>$ max(localMaxes) \{ \\
+\indent \indent \indent \indent \textbf{then;} sleep for a bit to give time to system to progress \\
+\indent \indent \indent  \} \\
+\indent \indent \indent \textbf{once} localMin $>$ max(localMaxes) is found (success) \{ \\
+\indent  \indent \indent \indent \textbf{then}, copy everything from that servers state\\
+\indent \indent  \} \\
+\indent \}
+
+The intuition on why this function is not as simple as just querying one server and copying his state is the following: that the recovering server has to be very careful when he recovers from a disk crash because he doesn't want to reverse a value that has already been chosen.
+This is possible because the acceptors for that server didn't persist, so its possible for him to reverse a decision unless he is guaranteed that he gets some acceptor that did participate in any majority that he formed.
+
+\subsubsection{Recover when all server crashes}
+
+When all servers die and their disk is intact, then its easy to recover because they should only fetch their disk contents.
+If they all crash and only one server loses its disk contents, then the one that lost its disk content should do the procedure already described in the previous section.
+If multiple disk crash, it should not be a problem unless a majority of the disk crash (which nothing can be done because our system has that limit).
+
+\subsection{How does the key-value store catch up?}
+
+Previously, our key-value need to "catch-up" its paxos log and key-value with the missing operation for it to be able to apply say, the most recent operation sent to it.
+A similar functionality would be nice to have with multi-Paxos.
+However it has to be a little different now.
+I will first present the pseudocode and then explain more in detail why the procedure is the way it is:
+
+\textbf{func} (MultiPaxos) CatchUp(largestLocalMin) \{ \\
+\indent \textbf{while} not at largestLocalMin /\ /\ while behind the catch up point: \\
+\indent \indent \textbf{call status} to see if decision is available on the servers local learner \\
+\indent \indent \textbf{if} not yet decided: \\
+\indent \indent \indent \textbf{prepare} NOP with a special, globally highest round number \\
+\indent \indent \indent  \textbf{wait} for decision... \\
+\indent \indent \indent \textbf{execute} and persist decision to KV \\
+\indent \indent \indent  \textbf{proceed} to next sequence number \\
+\indent \}\\
+
+The main idea for the above function is that it tries to query for every paxos slot to see if there is a decision, if there is a decision, then execute the decision to the key-vale store (basically the same as the previous labs).
+The only difference is that now we have a different point to catch up to, which is the largest local min we know.
+The reason that it has to be that way is because the largest local min guarantees that every sequence before them has been decided.
+
+\end{document}
