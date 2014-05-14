@@ -5,10 +5,11 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage[colorinlistoftodos]{todonotes}
+\usepackage{bbm}
 
 \title{EstimatorDB}
 
-\author{Pedro Cattori and Brando Miranda}
+\author{Brando Miranda}
 
 \begin{document}
 \maketitle
@@ -16,11 +17,134 @@
 \begin{abstract}
 In the modern world of big data, some times it is too costly to go through all the data one may have in a database.
 However, we are still interested in being able to query a database holding our data and get some understanding of the data that we have.
-In this paper I propose two different methods to estimate the total amount of a quantity some group of you data may have.
+In this paper I propose three different methods to estimate the total amount of a quantity some group of you data may have.
 First we will approximate the number of elements pertaining to one group and then, we will also estimate their mean value.
 With these two approximated quantities, we can easily estimate the total amount one group contributes by multiplying both averages.
-I will also prove the correctness of the algorithm that I propose.
+I will also argue the correctness of the algorithms that I propose.
+In the end, we will evaluate each algorithm in practice by comparing how each of them do on real data.
 \end{abstract}
+
+\section{Introduction}
+
+In recent years the amount of recorded data has increased exponentially.
+With this size data, it has become impractical to even read all the data.
+Thus, approximation tools have arisen to address this problem, so that users can still get understanding from their data in reasonable time.
+In this paper we explore some of these different tools.\\
+\indent To be able to explain these tools lets first go over some definitions used in this paper.
+Let an attribute be the data of interest.
+For example, an attribute can be the delay in hours for some airline.
+Each attribute (delay) belongs to some group (i.e. the airline).
+For example, for a series of flights, we might have a list of delays (attributes) for each airline (group).
+Airlines and delays are just illustrative example and
+I will mostly use the terms groups and attributes from here on.
+In this paper the word counts will mean the number of elements that we have for some group.
+To make clear what counts means consider the following simple example.
+If we have two groups $g_1$ and $g_2$ and we have 3 attributes for $g_1$ and 7 attributes for $g_2$, then the counts for $g_1$ is 3 and the counts for $g_2$ is 7.\\
+\indent In this paper I will suggest three ways of estimating counts for a group.
+I will also prove that these methods are reasonable estimates.
+The idea of what the algorithms are is easy and intuitive.
+The "easy" (simpler) algorithm just selects multiple subsections of the data and from those subsections estimates the fraction of elements that belong to some group $g_i$. \\
+\indent The less obvious algorithms for estimating counts works a little different.
+The less obvious algorithms depends on modeling the occurrences of a group as a Poisson process.
+It models the idea that, as we loop through an array of data, the longer time that we take to see the first occurrence of a certain attribute belonging to some group, the less frequent that group probably is (the less that group occurs in the data).
+The idea of the first algorithm is to start at different indexes in the data, and record the amount of time it takes to see $n$ fixed occurrences of a specific group.
+With this information, then one can come up with a metric that to estimate the mean of the Poisson distribution.
+Two really nice properties of this estimate that I will show is that it is unbiased and consistent.
+\indent The second algorithm for estimating counts also depends on the same intuition that the longer the time to see the occurrence of a group, the less frequent the group probably is in the data set.
+This second estimator is the regular MLE estimate for Poisson estimates.
+We allow the loop to run for some fixed time and then count the number of times we see the occurrence of some group g. \\
+\indent In the end, the goal will be to run these algorithms with real data and see which ones perform better in practice and thus conclude if a Possoin distribution is a better model or if a Binomial distribution is a better model
+
+\section{Statistical Estimates}
+
+Some of these estimates are obvious that they should work in theory, but I will verify it with two very simple proofs and one less simple one.
+I will start with the simple ones.
+Throughout this section let:
+
+$\hat{c}$ be the counts we are trying to estimate and $N$ be the total amount of data (groups and their attributes that we have). In fact, one can thing of the data as being a really large array of tuples of $(g_i, a_{i})$.
+
+\subsection{Estimate 1}
+
+\subsubsection{Definitons}
+
+Let $g$ be a fixed group that we want to know the counts for.
+Let $G_i$ be the indicator variables such that, its 1 if the element i on the data is of group g, and 0 o.w.
+
+
+Thus, if we wish to estimate the total number of elements in the data set that are of group g then we could compute it multiplying the probability of finding element $g_i$ times the total number of elements in the data. 
+If we have a subsection of the data $Data[i:j]$ then we can count the number of times group g occurred on the that interval and then use that as an estimate for probability of finding group $g$.
+Let k be the number of elements in the interval i to j.
+To formalize let $p_g$ be the true probability of finding group g.
+To formalize this let $\hat{p}_g$ be the estimated probability of finding group g:
+
+$$ \hat{p}_g = \frac{1}{k} \sum^{k}_{i=1} G_i $$
+
+Then we have the estimate to be:
+
+$$ \hat{c} = \hat{p}_g \cdot N $$
+
+Lets check that this estimate is unbiased and consistent:
+
+$$E[ \hat{c} ] = N \cdot E[\frac{1}{k} \sum^{k}_{i=1} G_i ]$$
+$$N \cdot \frac{1}{k} \sum^{k}_{i=1} E[G_i ] = N \cdot p_g$$
+
+This last line shows that if we assume the data is Binomial, then this estimate is unbiased and consistent.
+Obviously, one can just get multiple estimates of $\hat{c}$ and average them and the estimate is still valid.
+
+\subsection{Estimate 2}
+
+In this section I will describe one of the estimators under the assumption that finding a g is a random process.
+The estimate in this section is the usual MLE estimate for Poissons.
+Let $\lambda$ be the usual Poisson mean (the number of times we see group g in a unit time, say 1 second).
+Fix the amount of time $t$ that you are going to run the loop to find the element g.
+Let $N_t$ be the random variable counting the number of times we see g in a time interval [0,t].
+
+Then we can estimate the average amount of times we expect to see g in a time interval t in the following way
+
+$$ \lambda = \frac{N_t}{t}$$
+
+Then one can show that this is a reasonable estimate:
+
+$$E[\hat{\lambda}] =\frac{1}{t}E[N_t]=\frac{1}{t}\lambda t=\lambda$$
+
+Obviously, one can just get multiple estimates of $\hat{\lambda}$ and average them and the estimate is still valid.
+
+Let $T$ be the total time it takes to loop through all the data.
+
+Then if we had this value, then we could easily estimate the total number of elements that we would expect to see for group g in the whole data. Thus the estimate would be:
+
+$$\hat{c} = \lambda \cdot T$$
+
+The problem comes when we have to estimate T, because the whole point is to not iterate the whole data.
+However, for testing purposes we could just read the whole data a couple of times to see get an average estimate for T.
+However, this solution is rather unsatisfactory when we actually want to use this in practice, because the whole point is to process and read as little data as possible (and get the most information that we can). 
+Could we have done something else?
+We could try to approximate T by a different method.
+Let $n_t$ be the number of elements we traverse in a time period t (we could take advantage and count $n_t$ as we are counting the occurrences of g in this time interval, i.e. $N_t$).
+Then the average time to traverse 1 element would be:
+
+$$\frac{n_t}{t}$$
+
+But we know the total data that we have, so we can estimate $T$ in the following way:
+
+$$\hat{T} = \frac{t}{n_t} \cdot n$$
+
+Note that we can get a better estimate for both, $\hat{\lambda}$ and $\hat{T}$ by running it more time and calculating an average.
+
+$$
+
+Now we can estimate the counts with the following formula:
+
+$$\hat{c} = \lambda \cdot \hat{T} $$
+$$\hat{c}  = \lambda \cdot \frac{t}{n_t} \cdot n$$
+
+\subsection{Estimate 3}
+
+
+\section{Experiments}
+
+
+\section{Conclusion}
 
 
 
