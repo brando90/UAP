@@ -49,7 +49,7 @@ The less obvious algorithms depends on modeling the occurrences of a group as a 
 It models the idea that, as we loop through an array of data, the longer time that we take to see the first occurrence of a certain attribute belonging to some group, the less frequent that group probably is (the less that group occurs in the data).
 The idea of the first algorithm is to start at different indexes in the data, and record the amount of time it takes to see $n$ fixed occurrences of a specific group.
 With this information, then one can come up with a metric that to estimate the mean of the Poisson distribution.
-Two really nice properties of this estimate that I will show is that it is unbiased and consistent.
+Two really nice properties of this estimate that I will show is that it is unbiased and consistent.\\
 \indent The second algorithm for estimating counts also depends on the same intuition that the longer the time to see the occurrence of a group, the less frequent the group probably is in the data set.
 This second estimator is the regular MLE estimate for Poisson estimates.
 We allow the loop to run for some fixed time and then count the number of times we see the occurrence of some group g. \\
@@ -131,7 +131,6 @@ $$\hat{T} = \frac{t}{n_t} \cdot n$$
 
 Note that we can get a better estimate for both, $\hat{\lambda}$ and $\hat{T}$ by running it more time and calculating an average.
 
-$$
 
 Now we can estimate the counts with the following formula:
 
@@ -139,6 +138,84 @@ $$\hat{c} = \lambda \cdot \hat{T} $$
 $$\hat{c}  = \lambda \cdot \frac{t}{n_t} \cdot n$$
 
 \subsection{Estimate 3}
+
+In this section I will describe one of the estimators under the assumption that finding a g is a random process.
+This estimate is inspired from the MLE, but without careful treatment of it, can lead to a estimate that is biased but consistent.
+To show this estimate, I iterate on how I got to it.
+The reason this estimate came up was because I was thinking about the following question, what if I wanted the user to not have to specify a time in advance of how long the algorithm has to run but instead how many occurrences of g they want to see?
+With this in mind, you can instead search for the first occurrence of g from different offsets on you data and record how long it took to find each one.
+With this in mind, let $t_i$ be the time it too to find the first g.
+Note that if the occurrences is model as a Poisson, then $t_i \sim Exp(\lambda)$.
+Let $T_i$ be the actual time that this occurrence was recorded (so say $T_i$ could be 4pm etc).
+Let $T_0 = 0$ be the initial time and $T_k$ the last time a g was seen.
+Then, $T_i \sim Gamma(n, \lambda)$.
+Now the naive algorithm to run is, choose k different offsets and see how long each one takes to find the occurrence of g and record that as $t_i$.
+Thus, we could just record the total time to see all of these $k$ g's as: 
+$$ T_n = \sum^{k}_{i=1} t_i$$
+
+Thus our estimate of $\lambda$ be calculated as:
+
+$$\hat{\lambda} = \frac{k}{\sum^{k}_{i=1} t_i}$$
+
+But is this a valid estimate?
+
+Well lets see what the expectation of this estimate is.
+Note the Since $T_n$ is a sum of $n$ independent exponential random variables, then $T_n\sim\mathrm{Gamma}(n,\lambda)$
+
+$$E[\hat{\lambda}] = E[ \frac{k}{ \sum^{k}_{i=1} t_i } ]$$
+
+$$E[\hat{\lambda}] = E[ \frac{k}{ T_k } ]$$
+
+Since $T_k$ is a sum of $k$ independent exponential random variables, then $T_k\sim\mathrm{Gamma}(n,\lambda)$. That is, the density of $T_k$ (with respect to the Lebesgue) measure is given by:
+
+$$
+f_n(x)=\frac{x^{n-1}}{\Gamma(n)}\lambda^ne^{-\lambda x} 1_{(0,+\infty)}(x).
+$$
+
+We can proceed to calculate the expectation:
+
+$$
+ E\left[\hat\lambda\right]=k\int_0^\infty\frac{x^{k-2}}{\Gamma(k)}\lambda^ke^{-\lambda x}\, dx.
+$$
+
+The integral diverges for $k=1$ (because of the $x^{k-2}$).
+Therefore for $k\ge2$  you can compute the integral as
+
+$$
+ E\left[\hat\lambda \right]=k\frac{\lambda\Gamma(k-1)}{\Gamma(k)}\underbrace{\int_0^\infty\frac{x^{k-2}}{\Gamma(k-1)}\lambda^{k-1}e^{-\lambda x}\, dx}_{=1}
+$$
+
+Recall $\Gamma{(k)} = (k-1)!$ when k is an integer
+
+$$
+E[\hat{\lambda}] =  k\frac{\lambda (k-2)! }{(k-1)!}= \frac k{k-1}\lambda.
+$$
+
+Which isn't equal to $\lambda$. 
+But this estimate is not completely unreasonable.
+It has the nice property that it converges to the correct $\lambda$ as k goes to infinity.
+But its a little unfortunate to have to need that many samples.
+Instead we can do better by re-defining our estimator to be a different quantity that is un-biased and consistent.
+The quantity we want is:
+
+$$
+\hat\lambda =\frac{k-1}{\sum_{i=1}^k\tau_i},
+$$
+
+
+Now we have much better estimate for $\lambda$.
+Now we can calculate the counts easily in a similar manner as in the previous section:
+
+$$\hat{c} = \hat{\lambda} \cdot \hat{T} $$
+
+For this we need the estimate of $\hat{T}$.
+This can be estimated by estimating the average time to read through all the k data while we were searching for g. i.e.:
+
+$$\hat{T} = \frac{ \sum^{k}_{i=1} t_i }{ \sum^{k}_{i=1} }$$
+
+Yielding the quantity we want:
+
+$$\hat{c}  = \lambda \cdot \frac{\sum^{k}_{i=1} t_i}{\sum^{k}_{i=1} n_i} \cdot n $$
 
 
 \section{Experiments}
