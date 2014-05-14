@@ -151,7 +151,7 @@ Let $T_0 = 0$ be the initial time and $T_k$ the last time a g was seen.
 Then, $T_i \sim Gamma(n, \lambda)$.
 Now the naive algorithm to run is, choose k different offsets and see how long each one takes to find the occurrence of g and record that as $t_i$.
 Thus, we could just record the total time to see all of these $k$ g's as: 
-$$ T_n = \sum^{k}_{i=1} t_i$$
+$$ T_k = \sum^{k}_{i=1} t_i$$
 
 Thus our estimate of $\lambda$ be calculated as:
 
@@ -160,13 +160,13 @@ $$\hat{\lambda} = \frac{k}{\sum^{k}_{i=1} t_i}$$
 But is this a valid estimate?
 
 Well lets see what the expectation of this estimate is.
-Note the Since $T_n$ is a sum of $n$ independent exponential random variables, then $T_n\sim\mathrm{Gamma}(n,\lambda)$
+Note the Since $T_k$ is a sum of $n$ independent exponential random variables, then $T_k\sim\mathrm{Gamma}(k,\lambda)$
 
 $$E[\hat{\lambda}] = E[ \frac{k}{ \sum^{k}_{i=1} t_i } ]$$
 
 $$E[\hat{\lambda}] = E[ \frac{k}{ T_k } ]$$
 
-Since $T_k$ is a sum of $k$ independent exponential random variables, then $T_k\sim\mathrm{Gamma}(n,\lambda)$. That is, the density of $T_k$ (with respect to the Lebesgue) measure is given by:
+Since $T_k$ is a sum of $k$ independent exponential random variables, then $T_k\sim\mathrm{Gamma}(k,\lambda)$. That is, the density of $T_k$ (with respect to the Lebesgue) measure is given by:
 
 $$
 f_n(x)=\frac{x^{n-1}}{\Gamma(n)}\lambda^ne^{-\lambda x} 1_{(0,+\infty)}(x).
@@ -199,7 +199,7 @@ Instead we can do better by re-defining our estimator to be a different quantity
 The quantity we want is:
 
 $$
-\hat\lambda =\frac{k-1}{\sum_{i=1}^k\tau_i},
+\hat\lambda =\frac{k-1}{\sum_{i=1}^k t_i},
 $$
 
 
@@ -209,16 +209,51 @@ Now we can calculate the counts easily in a similar manner as in the previous se
 $$\hat{c} = \hat{\lambda} \cdot \hat{T} $$
 
 For this we need the estimate of $\hat{T}$.
-This can be estimated by estimating the average time to read through all the k data while we were searching for g. i.e.:
+This can be estimated by estimating the average time to read through all the k data while we were searching for g. :
 
-$$\hat{T} = \frac{ \sum^{k}_{i=1} t_i }{ \sum^{k}_{i=1} }$$
+$$ \frac{ \sum^{k}_{i=1} t_i }{ \sum^{k}_{i=1} n_i}$$
 
-Yielding the quantity we want:
+The quantity above intuitively represents the total amount of time to traverse 1 element.
+Thus, we can use the above quantity to estimate the total amount of time traverse the whole data if we do:
 
 $$\hat{c}  = \lambda \cdot \frac{\sum^{k}_{i=1} t_i}{\sum^{k}_{i=1} n_i} \cdot n $$
 
+\subsection{Estimating total amount of an attribute}
+
+Recall that a group has a list of attributes.
+Now that we know the counts for an attribute, its easy to calculate the total amount for an attribute since, we can get the mean estimate for an attribute using the ifocus algorithm suggested by Albert Kim.
+Let the mean of an attribute for a group g be denoted by $\hat{\mu}_g$. 
+Let the total for a group a be denoted by $\tau_g$.
+Let the estimated count for a group be denoted $\hat{c}_g$
+Once we have that we calculate the total by multiplying the average by the number of elements that we expect the data to have:
+
+$$\hat{ \tau}_g = \hat{c} \cdot \hat{\mu_g} $$
+
+
+%%----------------
 
 \section{Experiments}
+
+Let $\lambda_1$, $\lambda_2$ and $\lambda_3$ stand for the estimator 1, 2 and 3 from the previous section.
+The following data are evaluations on the algorithm after being run of synthetic data.
+
+\begin{tabular}{l*{6}{c}r}
+  & MPE counts & MPE total  \\
+\hline
+$\lambda_1$ & 6 & 4  \\
+$\lambda_2$  & 6 & 3   \\
+$\lambda_3$  & 6 & 2    \\
+\end{tabular}
+
+\begin{tabular}{l*{6}{c}r}
+A  & P & W & D  Pts \\
+\hline
+  & 6 & 4 & 0  \\
+B  & 6 & 3 & 0   \\
+B  & 6 & 2 & 1   \\
+B  & 6 & 2 & 1  \\
+\end{tabular}
+
 
 
 \section{Conclusion}
