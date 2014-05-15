@@ -227,17 +227,55 @@ $$\hat{ \tau}_g = \hat{c} \cdot \hat{\mu_g} $$
 
 Let $\lambda_1$, $\lambda_2$ and $\lambda_3$ stand for the estimator 1, 2 and 3 from the previous section.
 $\hat{T}$ was estimated as discussed on section 2.3.
-The following data are evaluations on the algorithm after being run of synthetic data.
+
+I will be evaluating these algorithms using the metric Mean Absolute Percentage Error defined as:
+
+$$\frac{1}{n}\sum^{n}_{i=1}\frac{|e_i - t_i|}{t_i}$$
+
+where $e_i$ is the estimated value for test i and $t_i$ is the true value for test i.
+The reason that I choose relative metric rather than absolute metric is because each different group has a different true number of counts and a true mean.
+Thus, adding the error on different means makes little sense because they are on different scales.
+Therefore, to remove that problem I decided to use the average absolute relative error.
+
+The following data are evaluations on the algorithm after being run on synthetic data.
 
 \begin{tabular}{l*{6}{c}r}
-  & MPE counts & MPE total  \\
+  & MAPE counts & MAPE total  \\
 \hline
-$\lambda_1$ & 7.92 &  7.96 \\
-$\lambda_2$  & 20.1 & 20.2   \\
-$\lambda_3$  & 30.2 & 30.1    \\
+$\lambda_1$ & 7.92\% &  7.96\% \\
+$\lambda_2$  & 20.1\% & 20.2\%   \\
+$\lambda_3$  & 30.2\% & 30.1\%    \\
 \end{tabular}
 
-\section{Conclusion}
+The way that these results were obtained was that for 9 different groups that had 100000 different attributes, I calculated the estimated counts and total amount of that attribute.
+I repeated that 100 times and then I estimated the MAPE.
+
+\section{Evalutation}
+
+From the results, we can see that the estimator that derived from the binomial classifier seems to be the best from the three that I suggested. 
+One of the reasons I believe its better is because it takes a simpler approach at the estimation and avoid one one extra parameter of estimation.
+The estimators that were derived from the Poisson processes also need some kind of estimate for the total amount of time to traverse the whole data (because otherwise we only have the average amount of occurrences of a group per unit time but we don't really know how many elements in the data belong to some group).
+
+\section{Conclusions}
+
+In conclusion, from the empirical results, it is clear that the estimator $\lambda_1$ is by far the best, beating the other estimates by more than $10\%$.
+This probably means that trying to model the occurrences of a group first through a time event driven process is not the best way to model approximate the occurrence the occurrence of some event.
+As I mentioned before, one of the problems that the Poisson process had was that we needed to estimate another variable, before being able to estimate the actual quantity that was of interest in hand.
+It was inefficient to have to model some other event rather than addressing the problem directly.
+This is one of the reasons I believe the binomial was a better method, since it did not circumvent the problem and addressed it more directly.
+Furthermore, if we had any uncertainty on the quantity two quantities $\hat{c}$ and $\hat{T}$, then the uncertainty of each one would amplify our uncertainty on the final estimate of interest.
+Therefore, the less quantities that we need to estimate to get our desired quantity, the better, because the less uncertainty we accumulate on the final results. 
+
+\section{Further things to explore}
+
+One topic that I find interesting to explore further, is to evaluate different method to estimate $\hat{T}$.
+Is it just that the method that I currently have is not the best?
+Also, having a more formal proof for the adequacy of the estimate for $\hat{T}$ would have also been very satisfying.
+Also, further experiments on more different types of data would have made it more interesting, to see if estimate had a different advantage over the other, depending how the data was generated.
+Say, if generated the data through a Bernouilli, a Normal, a Mixture of Normals, Multi-normals and any other process, which of the estimates that we had would have been the best?
+If the binomial was indeed the best for any situation, is there a proof out there that shows this?
+These would have been interesting question to pursue.
+
 
 
 
