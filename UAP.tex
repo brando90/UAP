@@ -282,9 +282,9 @@ I repeated that 100 times and then I estimated the MAPE.
 
 \section{Evalutation}
 
-From the results, we can see that the estimator that derived from the binomial classifier seems to be the best from the three that I suggested.
-It is not very surprising that it was the best when the data was generated as a Bernoulli process (since the Bernoulli is a special case of the Binomial).
-One of the reasons we believe its better is because it takes a simpler approach at the estimation and avoid one one extra parameter of estimation.
+From the results, we can see that the estimator that derived from the binomial classifier seems to be the best from the three that were suggested.
+It is not very surprising that it was the best when the data was generated as a Bernoulli process (since the Bernoulli is a special case of the Binomial), as in table 1. \\
+\indent One of the reasons we believe its better is because it takes a simpler approach at the estimation and avoid one one extra parameter of estimation.
 The estimators that were derived from the Poisson processes also need an estimate for the total amount of time to traverse the whole data (because otherwise we only have the average amount of occurrences of a group per unit time but we don't really know how many elements in the data belong to some group).
 The problem is that this introduced an extra uncertainty when it came to estimate counts. 
 This extra error was not introduced in the $\lambda_1$, which might be one of the reasons it performed better.
@@ -297,7 +297,7 @@ We want to get an estimate for the number of occurrences for a group g (i.e. the
 While the Poisson does not have such an upper bound and we have to estimate quantities that are not directly relevant to the problem.
 For example, in the Poisson we have a probably of seeing a specific group in a fraction of a second, while that is impossible to have in a Binomial, because the trials are discrete (while they are not discrete in the Poisson).
 This ultimately complicates the model more than we need because we are modeling a problem that we know is discrete into a continuous frame work, which will ultimately bring errors in our calculations. \\
-From the results of experiment 1 even though $\lambda_2$ seemed to be a better classifier than $\lambda_3$,  that was not true for the second experiment. 
+\indent From the results of experiment 1 even though $\lambda_2$ seemed to be a better classifier than $\lambda_3$,  that was not true for the second experiment. 
 Concluding that $\lambda_2$ is always better might be overfitting.
 Therefore, since they perform in similar ways on both experiments but on the opposite direction (i.e. one does better when the other does better), it is conservative to conclude that the methods are basically similar and that you would get with $50\%$ chance the one that performs a little worse. 
 Or on average, they both have about $25\%$ error.
