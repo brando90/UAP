@@ -15,64 +15,59 @@
 \maketitle
 
 \begin{abstract}
-In the modern world of big data, some times it is too costly to go through all the data one may have in a database.
-However, we are still interested in being able to query a database holding our data and get some understanding of the data that we have.
-In this paper I propose three different methods to estimate the total amount of a quantity some group of you data may have.
-First we will approximate the number of elements pertaining to one group and then, we will also estimate their mean value.
+Increasingly, databases are storing more and more data, making it costly to go through all the data one may have in a database.
+However, users are still interested in being able to query a database holding their data to get some understanding of the data that they have. %
+In this paper I propose three different sampling-based methods to estimate the total mean value of one particular attribute in a particular group of records in a data set. %
+First we approximate the number of elements pertaining to one group and then, estimate their mean value.
 With these two approximated quantities, we can easily estimate the total amount one group contributes by multiplying both averages.
 I will also argue the correctness of the algorithms that I propose.
-In the end, we will evaluate each algorithm in practice by comparing how each of them do on real data.
+We evaluate each algorithm in practice by comparing them on real data.
 \end{abstract}
 
 \section{Introduction}
 
 In recent years the amount of recorded data has increased exponentially.
-With this size data, it has become impractical to even read all the data.
+Making it increasingly impractical to even read all the data.
 Thus, approximation tools have arisen to address this problem, so that users can still get understanding from their data in reasonable time.
 In this paper we explore some of these different tools.\\
-\indent To be able to explain these tools lets first go over some definitions used in this paper.
+\indent To understand these tools we begin with a few definitions.
 Let an attribute be the data of interest.
 For example, an attribute can be the delay in hours for some airline.
 Each attribute (delay) belongs to some group (i.e. the airline).
 For example, for a series of flights, we might have a list of delays (attributes) for each airline (group).
-Airlines and delays are just illustrative example and
-I will mostly use the terms groups and attributes from here on.
 In this paper the word counts will mean the number of elements that we have for some group.
 To make clear what counts means consider the following simple example.
-If we have two groups $g_1$ and $g_2$ and we have 3 attributes for $g_1$ and 7 attributes for $g_2$, then the counts for $g_1$ is 3 and the counts for $g_2$ is 7.\\
-\indent In this paper I will suggest three ways of estimating counts for a group.
-I will also prove that these methods are reasonable estimates.
-The idea of what the algorithms are is easy and intuitive.
-The "easy" (simpler) algorithm just selects multiple subsections of the data and from those subsections estimates the fraction of elements that belong to some group $g_i$. \\
-\indent The less obvious algorithms for estimating counts works a little different.
-The less obvious algorithms depends on modeling the occurrences of a group as a Poisson process.
-It models the idea that, as we loop through an array of data, the longer time that we take to see the first occurrence of a certain attribute belonging to some group, the less frequent that group probably is (the less that group occurs in the data).
-The idea of the first algorithm is to start at different indexes in the data, and record the amount of time it takes to see $n$ fixed occurrences of a specific group.
-With this information, then one can come up with a metric that to estimate the mean of the Poisson distribution.
-Two really nice properties of this estimate that I will show is that it is unbiased and consistent.\\
-\indent The second algorithm for estimating counts also depends on the same intuition that the longer the time to see the occurrence of a group, the less frequent the group probably is in the data set.
-This second estimator is the regular MLE estimate for Poisson estimates.
+If we have two groups $g_1$ and $g_2$ and we have 3 records in $g_1$ and 7 records in $g_2$, then the counts for $g_1$ is 3 and the counts for $g_2$ is 7.\\
+\indent In this paper I describe three ways of estimating the counts for a group.
+I will also experimentally demonstrate that these methods are reasonable estimates.
+The simpler algorithm just selects multiple subsections of the data and from those subsections estimates the fraction of elements that belong to some group $g_i$. Later I will show that this process leads to modeling the occurrences of groups as a Binomial distribution\\
+\indent The less obvious algorithms for estimating counts works a little differently.
+Specifically, they model the occurrences of a group as a Poisson process using the idea that as we loop through an array of data, the longer time that we take to see the first occurrence of a certain attribute belonging to some group, the less frequent that group probably is (the less that group occurs in the data).
+The idea of the first algorithm is to start at different indexes in the data, and record the amount of time it takes to see $n$ occurrences of a specific group.
+With this information, then one can come up with an estimate the mean of means of the Poisson distribution.
+This approach has the desirable property that it estimates are both {\it unbiased} and {\it consistent}.\\
+\indent The second algorithm for estimating counts also depends on the intuition that the longer the time to see the occurrence of a group, the less frequent the group probably is in the data set.
+This second estimator is the regular Maximum Likelihood Estimate (MLE) estimate for Poisson processes.
 We allow the loop to run for some fixed time and then count the number of times we see the occurrence of some group g. \\
-\indent In the end, the goal will be to run these algorithms with real data and see which ones perform better in practice and thus conclude if a Possoin distribution is a better model or if a Binomial distribution is a better model
+\indent In the end, the goal will be to run these algorithms with real data and see which ones perform better in practice and thus conclude if a Poisson distribution is a better model or if the Binomial distribution is a better model.
 
 \section{Statistical Estimates}
 
-Some of these estimates are obvious that they should work in theory, but I will verify it with two very simple proofs and one less simple one.
+In this section, I describe the theory of the estimators I use, along with proofs of their correctness.
 I will start with the simple ones.
 Throughout this section let:
 
-$\hat{c}$ be the counts we are trying to estimate and $N$ be the total amount of data (groups and their attributes that we have). In fact, one can thing of the data as being a really large array of tuples of $(g_i, a_{i})$.
+$\hat{c}$ be the counts we are trying to estimate and $N$ be the total amount of data (groups and their attributes that we have). In fact, one can think of the data as being a large array of tuples of $(g_i, a_{i})$.
 
 \subsection{Estimate 1}
 
 Let $g$ be a fixed group that we want to know the counts for.
-Let $G_i$ be the indicator variables such that, its 1 if the element i on the data is of group g, and 0 o.w.
+Let $G_i$ be an indicator variables indicating the presence of a group.
 
 
-Thus, if we wish to estimate the total number of elements in the data set that are of group g then we could compute it multiplying the probability of finding element $g_i$ times the total number of elements in the data. 
-If we have a subsection of the data $Data[i:j]$ then we can count the number of times group g occurred on the that interval and then use that as an estimate for probability of finding group $g$.
+Thus, we can estimate the total number of elements in the data set that belong to group g by multiplying the probability of finding element $g_i$ times the total number of elements in the data. 
+If we have a subsection of the data $Data[i:j]$ then we can count the number of times group g occurs in the interval and then use that as an estimate for probability of finding group $g$.
 Let k be the number of elements in the interval i to j.
-To formalize let $p_g$ be the true probability of finding group g.
 To formalize this let $\hat{p}_g$ be the estimated probability of finding group g:
 
 $$ \hat{p}_g = \frac{1}{k} \sum^{k}_{i=1} G_i $$
@@ -86,18 +81,18 @@ Lets check that this estimate is unbiased and consistent:
 $$E[ \hat{c} ] = N \cdot E[\frac{1}{k} \sum^{k}_{i=1} G_i ]$$
 $$N \cdot \frac{1}{k} \sum^{k}_{i=1} E[G_i ] = N \cdot p_g$$
 
-This last line shows that if we assume the data is Binomial, then this estimate is unbiased and consistent.
-Obviously, one can just get multiple estimates of $\hat{c}$ and average them and the estimate is still valid.
+This last line shows that if we assume the data is Binomial, then this estimate is {\it consistent} \footnote{In the statistics community, if an estimator is consistent it means that as the number of data points increases indefinitely, the estimate converges in probability to the desired quantity.} and {\it un-biased} \footnote{In the statistics community, bias means the difference of between an estimate and its expected value. If the difference is zero, then the estimate is un-biased.}.
+Obviously, one can just get multiple estimates of $\hat{c}$ so that average them and the estimate is still valid.
 
 \subsection{Estimate 2}
 
-In this section I will describe one of the estimators under the assumption that finding a g is a random process.
-The estimate in this section is the usual MLE estimate for Poissons.
+In this section I will describe the 2nd estimator under the assumption that finding a g is a random process.
+The estimate in this section is the usual Maximum Likelihood Estimate estimate for Poissons.
 Let $\lambda$ be the usual Poisson mean (the number of times we see group g in a unit time, say 1 second).
-Fix the amount of time $t$ that you are going to run the loop to find the element g.
+Fix the amount of time $t$ that the process iterates over the data looking for elements in g.
 Let $N_t$ be the random variable counting the number of times we see g in a time interval [0,t].
 
-Then we can estimate the average amount of times we expect to see g in a time interval t in the following way
+Then we can estimate the average number of times we expect to see g in a time interval t in the following way
 
 $$ \lambda = \frac{N_t}{t}$$
 
@@ -105,32 +100,33 @@ Then one can show that this is a reasonable estimate:
 
 $$E[\hat{\lambda}] =\frac{1}{t}E[N_t]=\frac{1}{t}\lambda t=\lambda$$
 
-Obviously, one can just get multiple estimates of $\hat{\lambda}$ and average them and the estimate is still valid.
+Obviously, one can also get multiple estimates of $\hat{\lambda}$ and average them and the estimate will still be valid.
 
-Let $T$ be the total time it takes to loop through all the data.
+Let $T$ be the total time it takes to loop through all the data 
+(An estimate for $T$ will be given in section 2.3).
 
-Then if we had this value, then we could easily estimate the total number of elements that we would expect to see for group g in the whole data. Thus the estimate would be:
+Then if we had this value, then we could easily estimate the total number of elements that we would expect to see for group g in the whole data. As:
 
 $$\hat{c} = \lambda \cdot T$$
 
 
 \subsection{Estimating time to traverse the whole data}
 
-The problem comes when we have to estimate T, because the whole point is to not iterate the whole data.
-However, for testing purposes we could just read the whole data a couple of times to get an average estimate for T.
+The problem comes when we have to estimate T, because the whole point is to not iterate through the whole whole data.
+One simple approach would be to scan all of the data a few times to get an average estimate for T.
 However, this solution is rather unsatisfactory when we actually want to use the previous estimator in practice, because the whole point is to process and read as little data as possible (and get the most information that we can). 
 Could we have done something else?
-We could try to approximate T by a different method.
-Let $n_t$ be the number of elements we traverse in a time period t (we could take advantage and count $n_t$ as we are counting the occurrences of g in this time interval, i.e. $N_t$).
+In fact $T$ using a different method.
+Let $n_t$ be the number of elements we traverse in a time period t (we can and count $n_t$ as we are counting the occurrences of g in this time interval, i.e. $N_t$).
 Then the average time to traverse 1 element would be:
 
 $$\frac{t}{n_t}$$
 
-(note the quantity above estimates the time interval that passes by when we traverse 1 element) We could make this estimate better by repeating that many times:
+(note the quantity above estimates the time interval that passes by when we traverse 1 element) We could make this estimate better by repeating it many times:
 
 $$\frac{\sum^{n}_{i=1} t_i}{\sum^{n}_{i=1}n_{t, i}}$$
 
- But we know the total data that we have, so we can estimate $T$ in the following way:
+ Since we know the total number of elements that we have, we can estimate $T$ in the following way:
 
 $$\hat{T} = \frac{\sum^{n}_{i=1} t_i}{\sum^{n}_{i=1}n_{t, i}} \cdot n$$
 
@@ -141,17 +137,17 @@ $$\hat{c}  = \lambda \cdot \frac{\sum^{n}_{i=1} t_i}{\sum^{n}_{i=1}n_{t, i}} \cd
 
 \subsection{Estimate 3}
 
-In this section I will describe one of the estimators under the assumption that finding a g is a random process.
-This estimate is inspired from the MLE, but without careful treatment of it, can lead to a estimate that is biased but consistent.
-To show this estimate, I iterate on how I got to it.
-The reason this estimate came up was because I was thinking about the following question, what if I wanted the user to not have to specify a time in advance of how long the algorithm has to run but instead how many occurrences of g they want to see?
-With this in mind, you can instead search for the first occurrence of g from different offsets on you data and record how long it took to find each one.
-With this in mind, let $t_i$ be the time it too to find the first g.
-Note that if the occurrences is model as a Poisson, then $t_i \sim Exp(\lambda)$.
-Let $T_i$ be the actual time that this occurrence was recorded (so say $T_i$ could be 4pm etc).
+In this section I describe the 3rd estimator, which is also based on the assumption that finding a group g is a random process.
+This estimate is inspired from the MLE, but without careful treatment of it, can lead to an suboptimal estimate (i.e. one that is biased but consistent).
+I will develop this estimate iteratively.
+Suppose wanted the user to not have to specify a time in advance of how long the algorithm has to run but instead how many occurrences of g they want to see?
+With this in mind, we can instead search for the first occurrence of g from different offsets in the data and record how long it takes to find each one.
+With this in mind, let $t_i$ be the time it takes to find the first g.
+Note that if the occurrences are modeled as a Poisson, then $t_i \sim Exp(\lambda)$.
+Let $T_i$ be the actual time when this occurrence was recorded.
 Let $T_0 = 0$ be the initial time and $T_k$ the last time a g was seen.
 Then, $T_i \sim Gamma(n, \lambda)$.
-Now the naive algorithm to run is, choose k different offsets and see how long each one takes to find the occurrence of g and record that as $t_i$.
+Now a naive algorithm could, choose k different offsets and see how long each one takes to find an occurrence of g and record that as $t_i$.
 Thus, we could just record the total time to see all of these $k$ g's as: 
 $$ T_k = \sum^{k}_{i=1} t_i$$
 
@@ -161,17 +157,17 @@ $$\hat{\lambda} = \frac{k}{\sum^{k}_{i=1} t_i}$$
 
 But is this a valid estimate?
 
-Well lets see what the expectation of this estimate is.
+Let's see what the expectation of this estimate is.
 Note the Since $T_k$ is a sum of $n$ independent exponential random variables, then $T_k\sim\mathrm{Gamma}(k,\lambda)$
 
 $$E[\hat{\lambda}] = E[ \frac{k}{ \sum^{k}_{i=1} t_i } ]$$
 
 $$E[\hat{\lambda}] = E[ \frac{k}{ T_k } ]$$
 
-Since $T_k$ is a sum of $k$ independent exponential random variables, then $T_k\sim\mathrm{Gamma}(k,\lambda)$. That is, the density of $T_k$ (with respect to the Lebesgue) measure is given by:
+Since $T_k$ is a sum of $k$ independent exponential random variables, then $T_k\sim\mathrm{Gamma}(k,\lambda)$. That is, the density of $T_k$ is given by:
 
 $$
-f_n(x)=\frac{x^{n-1}}{\Gamma(n)}\lambda^ne^{-\lambda x} 1_{(0,+\infty)}(x).
+f_n(x)=\frac{x^{n-1}}{\Gamma(n)}\lambda^ne^{-\lambda x}
 $$
 
 We can proceed to calculate the expectation:
@@ -181,7 +177,7 @@ $$
 $$
 
 The integral diverges for $k=1$ (because of the $x^{k-2}$).
-Therefore for $k\ge2$  you can compute the integral as
+However, for $k\ge2$  we can compute the integral as
 
 $$
  E\left[\hat\lambda \right]=k\frac{\lambda\Gamma(k-1)}{\Gamma(k)}\underbrace{\int_0^\infty\frac{x^{k-2}}{\Gamma(k-1)}\lambda^{k-1}e^{-\lambda x}\, dx}_{=1}
@@ -193,11 +189,11 @@ $$
 E[\hat{\lambda}] =  k\frac{\lambda (k-2)! }{(k-1)!}= \frac k{k-1}\lambda.
 $$
 
-Which isn't equal to $\lambda$. 
+Which isn't equal to $\lambda$ (meaning there is some bias in the estimate). 
 But this estimate is not completely unreasonable.
 It has the nice property that it converges to the correct $\lambda$ as k goes to infinity.
-But its a little unfortunate to have to need that many samples.
-Instead we can do better by re-defining our estimator to be a different quantity that is un-biased and consistent.
+But it's a little unfortunate that it requires an infinite number of samples.
+Instead we can do better by re-defining our estimator to be a different quantity that is {\it un-biased} and { \it consistent}.
 The quantity we want is:
 
 $$
@@ -206,7 +202,7 @@ $$
 
 
 Now we have much better estimate for $\lambda$.
-Now we can calculate the counts easily in a similar manner as in the previous section:
+We can calculate the counts easily in a similar manner as in the previous section:
 
 $$\hat{c} = \hat{\lambda} \cdot \hat{T} $$
 
@@ -224,11 +220,11 @@ $$\hat{ \tau}_g = \hat{c} \cdot \hat{\mu_g} $$
 %%----------------
 
 \section{Experiments}
-
+In this section I briefly describe an experiment I conducted to compare the quality of these estimators.
 Let $\lambda_1$, $\lambda_2$ and $\lambda_3$ stand for the estimator 1, 2 and 3 from the previous section.
 $\hat{T}$ was estimated as discussed on section 2.3.
 
-I will be evaluating these algorithms using the metric Mean Absolute Percentage Error defined as:
+I will be evaluating these algorithms using the error (Mean Absolute Percentage Error) defined as:
 
 $$\frac{1}{n}\sum^{n}_{i=1}\frac{|e_i - t_i|}{t_i}$$
 
@@ -237,7 +233,19 @@ The reason that I choose relative metric rather than absolute metric is because 
 Thus, adding the error on different means makes little sense because they are on different scales.
 Therefore, to remove that problem I decided to use the average absolute relative error.
 
-The following data are evaluations on the algorithm after being run on synthetic data.
+The following data are evaluations on the algorithm after being run on synthetic data. 
+The synthetic data was generated using the Bernoulli distribution and a Mixture of Gaussian.
+For the Bernoulli generation of data, each group would have its own Bernoulli distribution and a data sample would be generated from each group. 
+So an data sample for a group g would be sampled from $d_{i,g} \sim Bernouilli(p_g)$.
+For the mixture of Gaussian, each group would have a probability of occurring $p_g$ and their own mean and standard deviation. 
+Thus leading the the well known Mixture of Gaussian:
+
+$$P(d_{i,g}) = \sum^{|G|}_{g=1} p_g N(d_{i,g} ; \mu_g, \sigma_g)$$
+
+Note, G is the set of possible groups $G = \{ g_1, ..., g_{|G|} \}$.
+\\
+
+Table 1: Result on data sampled from a Bernoulli distribution:
 
 \begin{tabular}{l*{6}{c}r}
   & MAPE counts & MAPE total  \\
@@ -245,16 +253,41 @@ The following data are evaluations on the algorithm after being run on synthetic
 $\lambda_1$ & 7.92\% &  7.96\% \\
 $\lambda_2$  & 20.1\% & 20.2\%   \\
 $\lambda_3$  & 30.2\% & 30.1\%    \\
+\end{tabular} \\ \\
+
+
+
+Table 2: Results on data sampled from a Mixture of Gaussian:
+
+\begin{tabular}{l*{6}{c}r}
+  & MAPE counts & MAPE total  \\
+\hline
+$\lambda_1$ & 7.19 \% &  7.21\% \\
+$\lambda_2$  & 32.7\% & 32.6\%   \\
+$\lambda_3$  & 22.3\% & 22.5\%    \\
 \end{tabular}
 
-The way that these results were obtained was that for 9 different groups that had 100000 different attributes, I calculated the estimated counts and total amount of that attribute.
+The MAPE counts is defined as the relative percentage difference of the real count from the true counts:
+
+$$\frac{1}{n}\sum^{n}_{i=1}\frac{|\hat{c_i} - c_i|}{c_i}$$
+
+Where $\hat{c_i}$ is the estimated value of the counts while $c_i$ is the true number of counts.
+
+The total is defined as the total $\tau$ amount for a group as defined in section 2.3.  
+
+$$\frac{1}{n}\sum^{n}_{i=1}\frac{|\hat{\tau_i} - \tau_i|}{\tau_i}$$
+
+The way that these results were obtained was that for 9 different groups there were 100000 different attributes, then we calculated the estimated counts and total amount of that attribute.
 I repeated that 100 times and then I estimated the MAPE.
 
 \section{Evalutation}
 
-From the results, we can see that the estimator that derived from the binomial classifier seems to be the best from the three that I suggested. 
-One of the reasons I believe its better is because it takes a simpler approach at the estimation and avoid one one extra parameter of estimation.
-The estimators that were derived from the Poisson processes also need some kind of estimate for the total amount of time to traverse the whole data (because otherwise we only have the average amount of occurrences of a group per unit time but we don't really know how many elements in the data belong to some group).
+From the results, we can see that the estimator that derived from the binomial classifier seems to be the best from the three that I suggested.
+It is not very surprising that it was the best when the data was generated as a Bernoulli process (since the Bernoulli is a special case of the Binomial).
+One of the reasons we believe its better is because it takes a simpler approach at the estimation and avoid one one extra parameter of estimation.
+The estimators that were derived from the Poisson processes also need an estimate for the total amount of time to traverse the whole data (because otherwise we only have the average amount of occurrences of a group per unit time but we don't really know how many elements in the data belong to some group).
+The problem is that this introduced an extra uncertainty when it came to estimate counts. 
+This extra error was not introduced in the $\lambda_1$, which might be one of the reasons it performed better.
 
 \section{Conclusions}
 

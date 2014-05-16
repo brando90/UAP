@@ -208,3 +208,29 @@ def GetAbsolutePercentageError(trueValsArray, approxValsArray, metaArg):
 		relativeErrors[g] = float(diff)/float(trueVal)
 	return relativeErrors, GetMeanAbsolutePercentageError(relativeErrors)
 
+
+
+# def DoUAP(data, meta, algsum):
+# 	true_means = algsum["actual_means"]
+#     approx_means = algsum["means"]
+# 	shuffleData = UAP.MakeShuffledData(data, meta)
+
+#     #UAP.estiamteTimeToTraverseData(shuffleData)
+
+#     #get counts
+#     approxCounts = UAP.GetApproxCountsForGroups(shuffleData, meta)
+#     trueCounts = UAP.GetTrueCounts(data, meta)
+#     if len(approxCounts) != len(trueCounts):
+#         print "len(approxCounts) != len(trueCounts)"
+#         raise
+#     #cal totals = counts * means
+#     approxTot = UAP.GetApproxTotals(approxCounts, approx_means, meta)
+#     trueTot = UAP.GetTrueTotal(trueCounts, true_means, meta)
+
+#     #print "\npercentage error calculation"
+#     percentageErrorsCounts, MAPEcounts = UAP.GetAbsolutePercentageError(trueValsArray=trueCounts, approxValsArray=approxCounts, metaArg=meta)
+#     #print "-------"
+#     percentageErrorsTotal, MAPEtotal = UAP.GetAbsolutePercentageError(trueValsArray=trueTot, approxValsArray=approxTot, metaArg=meta)
+#     print ":::::::> percentageErrorsCounts", MAPEcounts
+#     print ":::::::> percentageErrorsTotal", MAPEtotal
+
