@@ -288,6 +288,21 @@ One of the reasons we believe its better is because it takes a simpler approach 
 The estimators that were derived from the Poisson processes also need an estimate for the total amount of time to traverse the whole data (because otherwise we only have the average amount of occurrences of a group per unit time but we don't really know how many elements in the data belong to some group).
 The problem is that this introduced an extra uncertainty when it came to estimate counts. 
 This extra error was not introduced in the $\lambda_1$, which might be one of the reasons it performed better.
+One reason the binomial might be better is because, the binomial address the problem more directly.
+The binomial is usually models the number of success in n trials.
+The trials in this case is the number of times we see a specific group g in a iteration (trial) i.
+The binomial distribution has a theoretical upper bound of n (i.e. we can only see at most n successes in n trials).
+Which are properties that the problem we are trying to solve have.
+We want to get an estimate for the number of occurrences for a group g (i.e. the success of finding that group) and the binomial seems to model it more directly.
+While the Poisson does not have such an upper bound and we have to estimate quantities that are not directly relevant to the problem.
+For example, in the Poisson we have a probably of seeing a specific group in a fraction of a second, while that is impossible to have in a Binomial, because the trials are discrete (while they are not discrete in the Poisson).
+This ultimately complicates the model more than we need because we are modeling a problem that we know is discrete into a continuous frame work, which will ultimately bring errors in our calculations. \\
+From the results of experiment 1 even though $\lambda_2$ seemed to be a better classifier than $\lambda_3$,  that was not true for the second experiment. 
+Concluding that $\lambda_2$ is always better might be overfitting.
+Therefore, since they perform in similar ways on both experiments but on the opposite direction (i.e. one does better when the other does better), it is conservative to conclude that the methods are basically similar and that you would get with $50\%$ chance the one that performs a little worse. 
+Or on average, they both have about $25\%$ error.
+This conclusion is reasonable considering that the mathematical derivations conclude that the classification methods basically have the same expectation, so they should produce similar results.
+
 
 \section{Conclusions}
 
@@ -299,15 +314,15 @@ This is one of the reasons I believe the binomial was a better method, since it 
 Furthermore, if we had any uncertainty on the quantity two quantities $\hat{c}$ and $\hat{T}$, then the uncertainty of each one would amplify our uncertainty on the final estimate of interest.
 Therefore, the less quantities that we need to estimate to get our desired quantity, the better, because the less uncertainty we accumulate on the final results. 
 
-\section{Further things to explore}
+\section{Future Work}
 
-One topic that I find interesting to explore further, is to evaluate different method to estimate $\hat{T}$.
+One key topic for future exploration, is to evaluate different method to estimate $\hat{T}$.
 Is it just that the method that I currently have is not the best?
 Also, having a more formal proof for the adequacy of the estimate for $\hat{T}$ would have also been very satisfying.
 Also, further experiments on more different types of data would have made it more interesting, to see if estimate had a different advantage over the other, depending how the data was generated.
-Say, if generated the data through a Bernouilli, a Normal, a Mixture of Normals, Multi-normals and any other process, which of the estimates that we had would have been the best?
-If the binomial was indeed the best for any situation, is there a proof out there that shows this?
-These would have been interesting question to pursue.
+Specifically I would like to try a Normal, Multi-normals and any other process.
+If the binomial was indeed the best for any situation, is there a proof out there that shows it out performs the Poisson for any data set?
+Or maybe the structure we believe the data has can give us extra power to decide when each estimator is the appropriate one.
 
 
 
